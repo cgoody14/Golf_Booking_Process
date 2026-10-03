@@ -1,21 +1,17 @@
 # Copy to config.yaml and edit.
 club:
   # From the club URL: https://www.chronogolf.com/club/<slug>
-  slug: "your-club-slug"
-  # Numeric IDs — find them in DevTools > Network when loading tee times
-  # (look for a request to /marketplace/clubs/<club_id>/teetimes?...course_id=...)
-  club_id: 0
-  course_id: 0
-  # Optional rate/affiliation type id(s) (e.g. "Public"); leave empty to skip
-  affiliation_type_ids: []
+  slug: "country-club-of-billerica"
+  # Course UUID (course_ids=... in the /marketplace/v2/teetimes request)
+  course_uuid: "bcad5a1d-e640-449c-9891-a0db426e3204"
 
 booking:
-  date: "2026-10-10"         # YYYY-MM-DD
+  date: "2026-10-06"         # YYYY-MM-DD
   earliest: "07:00"          # 24h, course local time
   latest: "10:00"
-  players: 4
+  players: 2
   holes: 18
-  # true = stop on the final review page without clicking confirm
+  # true = stop before the final confirm click
   dry_run: true
 
 release:
@@ -27,5 +23,4 @@ release:
   give_up_after_seconds: 300
 
 browser:
-  headless: false            # keep false until the flow is verified
   profile_dir: ".browser-profile"

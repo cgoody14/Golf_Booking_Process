@@ -4,6 +4,7 @@ Chrome is started by us (not by Playwright) so it uses the real macOS
 Keychain — that's what lets it read the session you saved during `login`.
 Playwright then connects over Chrome's debugging port to drive it.
 """
+import json
 import socket
 import subprocess
 import sys
@@ -26,8 +27,27 @@ def chrome_path() -> str:
     return "google-chrome"
 
 
+def _keep_session_cookies(profile_dir: str) -> None:
+    """Set "Continue where you left off" so Chrome keeps login cookies after quitting.
+
+    Chronogolf's login cookie expires "at end of session", so without this
+    setting Chrome deletes it the moment you press Cmd + Q.
+    """
+    prefs_path = Path(profile_dir) / "Default" / "Preferences"
+    prefs_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        prefs = json.loads(prefs_path.read_text())
+    except (OSError, ValueError):
+        prefs = {}
+    if prefs.get("session", {}).get("restore_on_startup") == 1:
+        return
+    prefs.setdefault("session", {})["restore_on_startup"] = 1
+    prefs_path.write_text(json.dumps(prefs))
+
+
 def launch_chrome(profile_dir: str, *extra: str) -> subprocess.Popen:
     """Start Chrome with the bot profile. Chrome's log noise is hidden."""
+    _keep_session_cookies(profile_dir)
     return subprocess.Popen(
         [
             chrome_path(),

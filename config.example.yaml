@@ -1,0 +1,31 @@
+# Copy to config.yaml and edit.
+club:
+  # From the club URL: https://www.chronogolf.com/club/<slug>
+  slug: "your-club-slug"
+  # Numeric IDs — find them in DevTools > Network when loading tee times
+  # (look for a request to /marketplace/clubs/<club_id>/teetimes?...course_id=...)
+  club_id: 0
+  course_id: 0
+  # Optional rate/affiliation type id(s) (e.g. "Public"); leave empty to skip
+  affiliation_type_ids: []
+
+booking:
+  date: "2026-10-10"         # YYYY-MM-DD
+  earliest: "07:00"          # 24h, course local time
+  latest: "10:00"
+  players: 4
+  holes: 18
+  # true = stop on the final review page without clicking confirm
+  dry_run: true
+
+release:
+  # If tee times drop at a fixed time, the bot waits and then polls.
+  # Leave at null to search immediately.
+  at: null                   # e.g. "2026-10-03T07:00:00"
+  timezone: "America/New_York"
+  poll_seconds: 2
+  give_up_after_seconds: 300
+
+browser:
+  headless: false            # keep false until the flow is verified
+  profile_dir: ".browser-profile"

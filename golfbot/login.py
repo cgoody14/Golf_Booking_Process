@@ -2,36 +2,17 @@
 
 Opens a normal Google Chrome window (NOT controlled by the bot) using the
 bot's profile folder. You log in and pass the Cloudflare check yourself like
-any regular visit; the session cookies are saved in that profile and reused
-by later bot runs.
+any regular visit; the session is saved in that profile and reused by later
+bot runs.
 """
-import subprocess
-import sys
-from pathlib import Path
-
-from .browser import BASE, is_logged_in, open_context
+from .browser import BASE, is_logged_in, launch_chrome, open_context
 
 LOGIN_URL = f"{BASE}/login"
-MAC_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-
-
-def _chrome_path() -> str:
-    if sys.platform == "darwin":
-        return MAC_CHROME
-    if sys.platform.startswith("win"):
-        return r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-    return "google-chrome"
 
 
 def run(cfg) -> None:
-    profile = str(Path(cfg["browser"]["profile_dir"]).resolve())
-    proc = subprocess.Popen([
-        _chrome_path(),
-        f"--user-data-dir={profile}",
-        "--no-first-run",
-        "--no-default-browser-check",
-        LOGIN_URL,
-    ])
+    profile = cfg["browser"]["profile_dir"]
+    proc = launch_chrome(profile, LOGIN_URL)
 
     print("\n>>> A Chrome window opened. In it:")
     print(">>>   1. Enter your email + password")
@@ -42,9 +23,9 @@ def run(cfg) -> None:
     proc.wait()
 
     print("Checking the saved session...")
-    with open_context(cfg["browser"]["profile_dir"], headless=False) as ctx:
+    with open_context(profile, headless=False) as ctx:
         page = ctx.pages[0] if ctx.pages else ctx.new_page()
-        if is_logged_in(page):
-            print("Logged in. Session saved to", cfg["browser"]["profile_dir"])
+        if is_logged_in(page, verbose=True):
+            print("Logged in. Session saved to", profile)
         else:
-            raise SystemExit("Session not detected — run login again and make sure you finish logging in.")
+            raise SystemExit("Session not detected — see screenshots/session-check.png")

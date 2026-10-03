@@ -7,10 +7,14 @@ BASE = "https://www.chronogolf.com"
 
 
 @contextmanager
-def open_context(profile_dir: str, headless: bool):
+def open_context(profile_dir: str, headless: bool, channel: str = "chrome"):
+    # channel="chrome" drives your installed Google Chrome instead of
+    # Playwright's bundled Chromium (unsupported on older macOS, and a real
+    # Chrome is less likely to trip Cloudflare).
     with sync_playwright() as p:
         ctx: BrowserContext = p.chromium.launch_persistent_context(
             user_data_dir=profile_dir,
+            channel=channel,
             headless=headless,
             viewport={"width": 1280, "height": 900},
             locale="en-US",

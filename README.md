@@ -13,7 +13,7 @@ Nothing here solves or bypasses the Cloudflare check — when the session expire
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-playwright install chromium
+# Uses your installed Google Chrome — no `playwright install` needed
 cp .env.example .env              # add your email/password
 cp config.example.yaml config.yaml  # set club, date, time window
 ```

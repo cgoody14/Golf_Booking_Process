@@ -81,12 +81,13 @@ def _wait_for_port(port: int, timeout: float = 20) -> None:
 
 
 @contextmanager
-def open_context(profile_dir: str, headless: bool):
+def open_context(profile_dir: str, headless: bool = False):
+    """Start Chrome with a debugging port and attach Playwright to it."""
     port = _free_port()
     args = [f"--remote-debugging-port={port}", "--window-size=1280,900"]
     if headless:
         args.append("--headless=new")
-    proc = launch_chrome(profile_dir, *args, "about:blank")
+    proc = launch_chrome(profile_dir, *args, BASE)
     try:
         _wait_for_port(port)
         with sync_playwright() as p:
@@ -106,6 +107,31 @@ def open_context(profile_dir: str, headless: bool):
             proc.terminate()
 
 
+@contextmanager
+def session(profile_dir: str):
+    """Open one visible Chrome window and make sure it's logged in.
+
+    If it isn't, you log in by hand in that same window (passing Cloudflare
+    yourself) and press Enter in Terminal. The bot then keeps using that
+    window, so nothing depends on the login surviving a restart.
+    """
+    with open_context(profile_dir) as ctx:
+        page = ctx.pages[0] if ctx.pages else ctx.new_page()
+        for attempt in range(3):
+            if is_logged_in(page, verbose=True):
+                break
+            print("\n>>> Not logged in. In the Chrome window that just opened:")
+            print(">>>   1. Click Log In, enter your email + password")
+            print(">>>   2. Let the Cloudflare box finish (green check)")
+            print(">>>   3. Click Log in and wait for the page to load")
+            print(">>>   DON'T close Chrome.")
+            input(">>> Then come back here and press Enter... ")
+        else:
+            raise SystemExit("Still not logged in — see screenshots/session-check.png")
+        print("Logged in.")
+        yield ctx, page
+
+
 def is_challenge_page(page) -> bool:
     """True if Cloudflare is showing a challenge instead of the site."""
     title = (page.title() or "").lower()
@@ -113,12 +139,14 @@ def is_challenge_page(page) -> bool:
 
 
 def is_logged_in(page, verbose: bool = False) -> bool:
-    page.goto(f"{BASE}/dashboard", wait_until="domcontentloaded")
+    """Load the Chronogolf home page and look for signs of being logged out."""
+    page.goto(BASE, wait_until="domcontentloaded")
     page.wait_for_timeout(2500)
     challenged = is_challenge_page(page)
-    on_login = "login" in page.url or page.locator("input[type=password]").count() > 0
+    login_link = page.get_by_role("link", name="Log In", exact=True).count() > 0
+    login_form = page.locator("input[type=password]").count() > 0
     if verbose:
         SHOTS.mkdir(exist_ok=True)
         page.screenshot(path=str(SHOTS / "session-check.png"))
-        print(f"  url={page.url}  title={page.title()!r}  cloudflare={challenged}  login_form={on_login}")
-    return not challenged and not on_login
+        print(f"  url={page.url}  cloudflare={challenged}  login_link={login_link}  login_form={login_form}")
+    return not (challenged or login_link or login_form)

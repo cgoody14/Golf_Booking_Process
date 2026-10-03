@@ -9,7 +9,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from . import teetimes
-from .browser import BASE, is_challenge_page, is_logged_in, open_context
+from .browser import BASE, is_challenge_page, session
 
 SHOTS = Path("screenshots")
 
@@ -87,12 +87,7 @@ def _checkout(page, slot: dict, cfg) -> None:
 
 
 def run(cfg) -> None:
-    b = cfg["browser"]
-    with open_context(b["profile_dir"], headless=b.get("headless", False)) as ctx:
-        page = ctx.pages[0] if ctx.pages else ctx.new_page()
-        if not is_logged_in(page):
-            raise SystemExit("Not logged in (or Cloudflare blocked). Run: python -m golfbot login")
-
+    with session(cfg["browser"]["profile_dir"]) as (ctx, page):
         _wait_for_release(cfg)
         slot = _find_slot(ctx, cfg)
         if not slot:
@@ -103,3 +98,4 @@ def run(cfg) -> None:
         except Exception:
             _shot(page, "error")
             raise
+        input("Press Enter to close Chrome... ")
